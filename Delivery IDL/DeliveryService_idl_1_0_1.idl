@@ -1,0 +1,222 @@
+﻿service DeliveryService {
+    @description
+    "#Overview
+        The Delivery Service provides Driver information,Van and Order details for a Customer Delivery Assistant, Products for a van.
+        Delivery Adapter service interacts with Delivery Service to get the data.
+        Delivery Service interacts with Tibco to get Delivery information and Receipt Data which is needed for SDS app.
+        Delivery service also intereact with JUVO and microlise to update journey status.";
+
+  /* Service Level EVENTS */
+
+        interface Deliveries {
+        @description "#Overview
+        For Delivery Adapter Service which inturn interact with (SDS App) which needs customer orders delivery information
+        this service acts as a gateway to integrate with all necessary services and provide a standardized information
+        it is important to protect customer information , and data classified as sensitive , hence this will follow a standard
+        encryption mechanisms to ensure the consumer gets encrypted data "
+
+        ##Examples
+        SDS app (Consumer) Registers with Identity to get the ClientID and the Secure credentials, to get the dynamic access token which
+        should then be passed to the deliveryadapter service for authorization.
+
+        Deliveryservice REST endpoint - https://tobeaddedd/Delivery/v1/DriverInfo/store/badgeid/    
+
+        @owner "Amanda Field","Amanda.Field@uk.tesco.com","1.0.1"
+        @owner "Roshini Isaac","Roshini.Issac@in.tesco.com","1.0.1"
+
+        @Author ""
+        @Reviewer ""
+        @organisation "Tesco";
+        @organisationDomainName "tesco.com";
+        @namespacePrefix "Tesco.Com.Services";
+
+        /* OPERATIONS */
+        /*
+        @GET
+        @Consumes("application/text")
+        @Produces("application/json")
+        @Path("/stock/levels/tpnb:050987783/store:05403")
+        */
+        CustomerDeliveryAssistant GetCustomerDeliveryAssistantInfo(mandatory int storeNumber, mandatory string employeeId)
+            throws NoCustomerDeliveryAssistantFoundException
+	                {
+		                @description "Return Customer Delivery Assistant info";
+		                @parameter storeNumber, "Store number of a Custome rDelivery Assistant";
+                        @parameter employeeId, "employee id of a Customer Delivery Assistant";
+                 
+                        @exception NoCustomerDeliveryAssistantFoundException, "There is no Custome rDelivery Assistant employee id present in the store ";
+
+                        @return "Customer Delivery Assistant information of a store";
+                        @since 1.0.1;
+                    } 
+       VanTrip GetVanTripInfoForCDA(mandatory int storeNumber, mandatory string employeeId)
+           throws DeliveryUnassignedException
+
+                    {
+                        @description "Returns earliest Van trip info for the Customer Delivery Assistant";
+		                @parameter storeNumber, "Store number of a Customer Delivery Assistant";
+                        @parameter employeeId, "employee id of a Customer Delivery Assistant";
+
+                        @exception DeliveryUnassignedException, "There are planned deliveries for this store however it is not assigned to any Customer Delivery Assistant's ";
+
+                        @return "All the orders belonging to van";
+                        @since 1.0.1;
+                    }
+        List<DeliveryOrder> GetOrdersForCDA(mandatory int storeNumber, mandatory string employeeId, mandatory string vanTripId)
+            throws NoOrdersFoundException
+                    {
+                        @description "Return list of order for a Customer Delivery Assistant with respect to a van";
+		                @parameter storeNumber, "Store number of a Customer Delivery Assistant";
+                        @parameter employeeId, "employee id of a Customer Delivery Assistant";
+                        @parameter vanTripId, "Freindly van Trip Id assignedto a Customer Delivery Assistant";
+
+                        @exception NoOrdersFoundException, "There are no orders for the Van ";
+
+                        @return "All the orders belonging to van";
+                        @since 1.0.1;
+                    }
+
+        List<Product> ListGetProductsForVan(mandatory int storeNumber, mandatory string vanTripId)
+            throws NoProductsFoundException
+                    {
+                        @description "Return list of products of a van with respect to a store";
+		                @parameter storeNumber, "Store number of a Customer Delivery Assistant";
+                        @parameter vanTripId, "Freindly van Trip Id assignedto a Customer Delivery Assistant";
+
+                        @exception NoProductsFoundException, "There are no Products for the Van ";
+
+                        @return "All the products of a van with respect to a store";
+                        @since 1.0.1;
+                    }
+  
+
+         /* TYPES */
+        type CustomerDeliveryAssistant(string fullName,string employeeId,long phoneNumber)
+            {
+                    @description "Details of Customer Delivery Assistant";
+		            @parameter fullName, "Customer Delivery Assistant full name ";
+		            @parameter employeeId, "Customer Delivery Assistant employeeId";
+                    @parameter phoneNumber, "Phone number of device";
+                    @since 1.0.1;
+            }
+        type DeliveryOrder(type Customer customer,enum Orderstatus orderstatus, int storeId, datetime orderDate, int orderId, Notes notes)
+            {
+                    @description "Details of Order per customer";
+                    @parameter Customer, "Details of the customer";
+		            @parameter orderstatus, "Status of the order";
+                    @parameter storeId, "Store Id";
+                    @parameter orderDate, "Order placed date";
+                    @parameter orderId, "Orderid";
+                    @parameter notes, "customer notes";
+                    @since 1.0.1;
+            }
+        type Notes(List<Note> notes)
+        {
+            @description "List of Customer Notes";
+            @parameter notes, "List of customer notes";
+            @since 1.0.1;
+        }
+        type Note(enum NoteType noteType, date Date, string noteContent)
+        {
+            @description "Customer Notes";
+            @parameter Date, "note date";
+            @parameter noteContent, "note Content";
+            @since 1.0.1;
+        }
+        type VanTrip(datetime startTime, datetime endTime, string vanTripId,
+            type TripStatus tripStatus)
+	        {
+		            @description "Return vantrip assigned to the Customer Delivery Assistant";
+		            @parameter startTime, "Van trip start time";
+		            @parameter endTime, "Van trip end time";
+                    @parameter vanTripId, "Freindly van Trip Id";
+                    @parameter tripStatus, "Trip status";
+                    @since 1.0.1;
+            } 
+         
+        type Product(int productId,int quantity, enum ProductStatus productStatus, float price,string productName, string description)
+            {
+                    @description "Details of Order per customer";
+                    @parameter productId, "productId of the product";
+                    @parameter price, "Price of the product";
+                    @parameter productName, "Name of the product";
+                    @parameter description, "description of the product";
+                    @parameter orderId, "Orderid";
+                    @since 1.0.1;
+            }
+      
+         type customer(string firstName, string lastName, string middleName, string fullName, type Contact contact)
+        {
+            @description "Details of the customer";
+            @parameter firstName, "First Name of the customer";
+            @parameter lastName, "Last Name of the customer";
+            @parameter middleName, "Middle Name of the customer";
+            @parameter fullName, "Full Name of the customer";
+            @parameter contact, "Details of the customer";
+            @since 1.0.1;
+		           
+        }
+        type Contact(int contactId, string addressLine1, string addressLine2, string city, string state, string dayTimePhone,string eveningTimePhone, string mobilePhone)
+        {
+            @description "Details of the customer";
+            @parameter line1, "line1 address of the customer";
+            @parameter line2, "line1 address of the customer";
+            @parameter localityName, "locality name of the customer";
+            @parameter postTown, "Post Town of the customer";
+            @parameter postCode, "Post code of the customer";
+            @since 1.0.1;
+        }     
+      
+     
+
+        //Enum
+        enumeration Orderstatus(DELIVERED, NOTDELIVERED, PAYMENTINCOMPLETE)
+            {
+                    @description "Status of the order";
+                    @value DELIVERED, "Delivered";
+                    @value NOTDELIVERED, "NotDelivered";
+                    @value PAYMENTINCOMPLETE, "PaymentIncomplete";
+                    @since 1.0.1;
+            }
+        enumeration TripStatus(Started, InProgress, Completed)
+            {
+                    @description "Status of the Connection";
+                    @value Started, "Started";
+                    @value InProgress, "InProgress";
+                    @value Completed, "Completed";
+                    @since 1.0.1;
+            }
+     enumeration NoteType(DELIVERYINSTRUCTIONS, CUSTOMERNOTES, HISTORY)
+            {
+                    @description "Differenttype of Note";
+                    @value DELIVERYINSTRUCTIONS, "DeliveryInstructions";
+                    @value CUSTOMERNOTES, "CustomerNotes";
+                    @value HISTORY, "History";
+                    @since 1.0.1;
+            }
+            //Exceptions
+        exception NoCustomerDeliveryAssistantFoundException(string message)
+            {
+                @description "Thrown when there is no Customer Delivery Assistant employee id present in the store";
+                @parameter message, "Any additional information";
+                @since 1.0.1;
+            }
+        exception DeliveryNotReadyException(string message){
+                @description "Thrown when there are planned deliveries for this store and Customer Delivery Assistant but End of Van has not been triggered";
+                @parameter message, "Any additional information";
+                @since 1.0.1;
+            }
+
+        exception NoOrdersFoundException(string message){
+                @description "Thrown when there no orders found for the van";
+                @parameter message, "Any additional information";
+                @since 1.0.1;
+            }
+        exception NoProductsFoundException(string message){
+                @description "Thrown when there no Products found for the van";
+                @parameter message, "Any additional information";
+                @since 1.0.1;
+            }
+
+
+ }
